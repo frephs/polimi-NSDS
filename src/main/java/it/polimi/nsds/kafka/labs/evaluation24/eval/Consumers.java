@@ -1,4 +1,4 @@
-package it.polimi.nsds.kafka.labs.evaluation24;
+package it.polimi.nsds.kafka.labs.evaluation24.eval;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -27,7 +27,7 @@ import java.util.*;
 // Please, specify below any relation between the number of partitions for the topics
 // and the number of instances of each Consumer
 
-public class ConsumersXX {
+public class Consumers {
     public static void main(String[] args) {
         String serverAddr = "localhost:9092";
         int consumerId = Integer.valueOf(args[0]);
@@ -65,8 +65,6 @@ public class ConsumersXX {
             consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, IntegerDeserializer.class.getName());
 
             // The consumer does not commit automatically, but within the producer transaction!!!!!!
-            /// somewhere there should be a consumer.commitSync()? NOOOOOO
-            /// consumers are responsible for storing their own offset. but in this case it's done for by the producer with send to transaction with consumer metadata
             consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, String.valueOf(false));
 
             KafkaConsumer<String, Integer> consumer = new KafkaConsumer<>(consumerProps);
@@ -111,9 +109,6 @@ public class ConsumersXX {
                         System.out.println("Sending to output topic: " + outputTopic);
                         producer.send(new ProducerRecord<>(outputTopic, "Sum", sum));
 
-                        ///saves the offsets to consumer inner topics
-                        /// commmitSync would not be the same since it would be outside of the producer transaction
-                        /// commitSync is used only in consumers that do not forward and do not depende on a producing transaction.
                         producer.sendOffsetsToTransaction(map, consumer.groupMetadata());
                         producer.commitTransaction();
 

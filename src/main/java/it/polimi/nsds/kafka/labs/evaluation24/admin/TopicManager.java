@@ -1,4 +1,4 @@
-package it.polimi.nsds.kafka.labs.evaluation24.solution.admin;
+package it.polimi.nsds.kafka.labs.evaluation24.admin;
 
 import org.apache.kafka.clients.admin.*;
 

@@ -1,4 +1,4 @@
-package it.polimi.nsds.kafka.labs.evaluation24.solution.eval;
+package it.polimi.nsds.kafka.labs.evaluation24.eval;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
