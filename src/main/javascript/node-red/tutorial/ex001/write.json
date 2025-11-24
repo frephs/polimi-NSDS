@@ -1,0 +1,121 @@
+[
+    {
+        "id": "ea0f1d68d12ac72a",
+        "type": "tab",
+        "label": "Log Milan Temperature",
+        "disabled": true,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d12c41449e04eecb",
+        "type": "openweathermap",
+        "z": "ea0f1d68d12ac72a",
+        "name": "Weather in milan",
+        "wtype": "current",
+        "lon": "",
+        "lat": "",
+        "city": "Milan",
+        "country": "IT",
+        "language": "en",
+        "x": 330,
+        "y": 120,
+        "wires": [
+            [
+                "a6486b7a5a943c96",
+                "03ed52e89b867c33"
+            ]
+        ]
+    },
+    {
+        "id": "4108b34eadfcb8b5",
+        "type": "inject",
+        "z": "ea0f1d68d12ac72a",
+        "name": "inject",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 120,
+        "wires": [
+            [
+                "d12c41449e04eecb"
+            ]
+        ]
+    },
+    {
+        "id": "a6486b7a5a943c96",
+        "type": "debug",
+        "z": "ea0f1d68d12ac72a",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "2c4e59f95f098d36",
+        "type": "file",
+        "z": "ea0f1d68d12ac72a",
+        "name": "write to file",
+        "filename": "milan.log",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 810,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "03ed52e89b867c33",
+        "type": "function",
+        "z": "ea0f1d68d12ac72a",
+        "name": "function 1",
+        "func": "msg.payload = msg.payload.tempc;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 180,
+        "wires": [
+            [
+                "2c4e59f95f098d36"
+            ]
+        ]
+    },
+    {
+        "id": "07162db887cbaeaa",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-openweathermap": "1.0.1"
+        }
+    }
+]

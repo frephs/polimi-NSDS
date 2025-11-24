@@ -1,0 +1,22 @@
+[
+    {
+        "id": "d5351dce65c46843",
+        "type": "function",
+        "z": "169b6dad63b51b82",
+        "name": "function 2",
+        "func": "let temp = msg.payload.fields.temperature;\nlet humidity = msg.payload.fields.humidy;\nlet pm10 = msg.payload.fields.pm10;\nlet pm25 = msg.payload.fields.pm25;\n\nif (temp && (!context.get(\"temp\") || temp > context.get(\"temp\"))) {\n    context.set(\"temp\", temp)\n}\nif (humidity && (!context.get(\"humidity\") || humidity > context.get(\"humidity\"))) {\n    context.set(\"humidity\", humidity)\n}\nif (pm10 && (!context.get(\"pm10\") || pm10 > context.get(\"pm10\"))) {\n    context.set(\"pm10\", pm10)\n}\nif (pm25 && (!context.get(\"pm25\") || pm25 > context.get(\"pm25\"))) {\n    context.set(\"pm25\", pm25)\n}\n\nmsg.payload  = {\n    temp:  context.get(\"temp\"),\n    humidity: context.get(\"humidity\"),\n    pm10: context.get(\"pm10\"),\n    pm25: context.get(\"pm25\"),\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\ncontext.set(\"temp\", -1)\ncontext.set(\"pm10\", -1)\ncontext.set(\"pm25\", -1)\ncontext.set(\"humidity\", -1)\n",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 320,
+        "wires": [
+            [
+                "d9d3c43ccd853a17"
+            ]
+        ]
+    }
+]

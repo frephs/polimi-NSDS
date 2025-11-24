@@ -1,0 +1,75 @@
+[
+    {
+        "id": "0957d09742f17e46",
+        "type": "tab",
+        "label": "Read Milan Temperature",
+        "disabled": true,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "bec3c9410da32ec6",
+        "type": "inject",
+        "z": "0957d09742f17e46",
+        "name": "timer",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 190,
+        "y": 160,
+        "wires": [
+            [
+                "42c594bd0fa2c91b"
+            ]
+        ]
+    },
+    {
+        "id": "42c594bd0fa2c91b",
+        "type": "file in",
+        "z": "0957d09742f17e46",
+        "name": "read log",
+        "filename": "milan.log",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 360,
+        "y": 160,
+        "wires": [
+            [
+                "3aed24246924f3fb"
+            ]
+        ]
+    },
+    {
+        "id": "3aed24246924f3fb",
+        "type": "debug",
+        "z": "0957d09742f17e46",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 560,
+        "y": 160,
+        "wires": []
+    }
+]

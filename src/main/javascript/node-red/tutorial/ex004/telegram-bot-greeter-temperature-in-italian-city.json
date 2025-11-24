@@ -1,0 +1,29 @@
+[
+    {
+        "id": "5dbdbb535290ae34",
+        "type": "chatbot-message",
+        "z": "05a2391675fb0f4a",
+        "name": "Greet back",
+        "message": [
+            {
+                "message": "Hi! I'm frephs's node-red bot. How can i help you today?"
+            }
+        ],
+        "language": "none",
+        "x": 1170,
+        "y": 240,
+        "wires": [
+            [
+                "f3a6c55ec0a05a53"
+            ]
+        ]
+    },
+    {
+        "id": "63c494811c9f9653",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-chatbot": "1.2.4"
+        }
+    }
+]

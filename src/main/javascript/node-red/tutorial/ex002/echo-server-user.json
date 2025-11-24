@@ -1,0 +1,187 @@
+[
+    {
+        "id": "f438cb8b73e7cea5",
+        "type": "tab",
+        "label": "UDP Echo Client",
+        "disabled": true,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "57a0a9f1fa55c1d4",
+        "type": "openweathermap",
+        "z": "f438cb8b73e7cea5",
+        "name": "Weather in milan",
+        "wtype": "current",
+        "lon": "",
+        "lat": "",
+        "city": "Milan",
+        "country": "IT",
+        "language": "en",
+        "x": 410,
+        "y": 180,
+        "wires": [
+            [
+                "91a1dccd9bcfb392",
+                "3b9791562915868e"
+            ]
+        ]
+    },
+    {
+        "id": "576875f4c26c374f",
+        "type": "inject",
+        "z": "f438cb8b73e7cea5",
+        "name": "inject",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 210,
+        "y": 180,
+        "wires": [
+            [
+                "57a0a9f1fa55c1d4"
+            ]
+        ]
+    },
+    {
+        "id": "91a1dccd9bcfb392",
+        "type": "debug",
+        "z": "f438cb8b73e7cea5",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "3b9791562915868e",
+        "type": "function",
+        "z": "f438cb8b73e7cea5",
+        "name": "write message",
+        "func": "msg = {\n    payload: \n        {\n            str: \"The temperature in Milan is\",\n            num:  msg.payload.tempc\n        }\n}\nreturn msg",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 700,
+        "y": 240,
+        "wires": [
+            [
+                "47e333cf71e90ed2"
+            ]
+        ]
+    },
+    {
+        "id": "3dfeac136a579c02",
+        "type": "udp out",
+        "z": "f438cb8b73e7cea5",
+        "name": "send to echo",
+        "addr": "localhost",
+        "iface": "",
+        "port": "7779",
+        "ipv": "udp4",
+        "outport": "",
+        "base64": false,
+        "multicast": "false",
+        "x": 1050,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "7c0285e65f482943",
+        "type": "udp in",
+        "z": "f438cb8b73e7cea5",
+        "name": "",
+        "iface": "",
+        "port": "5555",
+        "ipv": "udp4",
+        "multicast": "false",
+        "group": "",
+        "datatype": "utf8",
+        "x": 240,
+        "y": 340,
+        "wires": [
+            [
+                "b7b598cf4b037853"
+            ]
+        ]
+    },
+    {
+        "id": "b7b598cf4b037853",
+        "type": "json",
+        "z": "f438cb8b73e7cea5",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 390,
+        "y": 340,
+        "wires": [
+            [
+                "e15c7fe80ccc97a1"
+            ]
+        ]
+    },
+    {
+        "id": "e15c7fe80ccc97a1",
+        "type": "debug",
+        "z": "f438cb8b73e7cea5",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 550,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "47e333cf71e90ed2",
+        "type": "json",
+        "z": "f438cb8b73e7cea5",
+        "name": "",
+        "property": "payload",
+        "action": "str",
+        "pretty": false,
+        "x": 890,
+        "y": 240,
+        "wires": [
+            [
+                "3dfeac136a579c02"
+            ]
+        ]
+    },
+    {
+        "id": "3e89e9b8a5c3b4ae",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-openweathermap": "1.0.1"
+        }
+    }
+]

@@ -1,0 +1,228 @@
+[
+    {
+        "id": "21971d09456ff5b2",
+        "type": "tab",
+        "label": "NSDS Group 28 Eval 2025",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "f2f47eb8e1badea0",
+        "type": "chatbot-telegram-receive",
+        "z": "21971d09456ff5b2",
+        "bot": "d3e571346221efc3",
+        "botProduction": "",
+        "x": 230,
+        "y": 140,
+        "wires": [
+            [
+                "4d05b0709d06b377",
+                "20831bfe15c153e7"
+            ]
+        ]
+    },
+    {
+        "id": "20831bfe15c153e7",
+        "type": "function",
+        "z": "21971d09456ff5b2",
+        "name": "Router",
+        "func": "// We're storing user preferences in the flow context so that we can log it in other nodes.\n// If not for that, the node context would be sufficient.\n\nif (msg.payload.content.startsWith(\"QUERY\")) {\n    // Parse message\n    let [city, country] = msg.payload.content.split(\" \").slice(1);\n\n    // Set OpenWeather location\n    msg.location = {city, country};\n\n    return [msg, null];\n} else if (msg.payload.content.startsWith(\"TRACK\")) {\n    // Get preferences from flow context\n    // Shape: Map<USER_ID, Set<\"CITY-COUNTRY\">>\n    const map = flow.get('preferences') || new Map();\n\n    // Get user preferences\n    // Shape: Set<\"CITY-COUNTRY\">\n    const curr = map.get(msg.payload.userId) || new Set();\n\n    // Parse message\n    let [city, country] = msg.payload.content.split(\" \").slice(1);\n    \n    // Add new location\n    curr.add(`${city}-${country}`);\n\n    // Update context\n    map.set(msg.payload.userId, curr);\n    flow.set('preferences', map);\n\n    // Set payload for response\n    msg.payload = { city, country };\n    return [null, msg];\n} else if (msg.payload.content.startsWith(\"REPORT\")) {\n    // Get saved locations for the sender\n    const pref = flow.get('preferences') || new Map();\n    const locations = pref.get(msg.payload.userId) || new Set();\n\n    return [\n        // For every location, create a \"query\" message for OpenWeather\n        [...locations].map(value => {\n            // Parse key\n            let [city, country] = value.split('-');\n\n            return {\n                // Copy the message info\n                ...msg,\n                \n                // Set OpenWeather location\n                location: {\n                    city,\n                    country\n                }\n            }\n        }),\n        null\n    ]\n} \n\nthrow new Error('Unknown command.')",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 230,
+        "y": 260,
+        "wires": [
+            [
+                "5db01f1b9161e752"
+            ],
+            [
+                "28f8e9db66397965"
+            ]
+        ]
+    },
+    {
+        "id": "4d05b0709d06b377",
+        "type": "debug",
+        "z": "21971d09456ff5b2",
+        "name": "Log incoming message",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 550,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "5db01f1b9161e752",
+        "type": "openweathermap",
+        "z": "21971d09456ff5b2",
+        "name": "Query OpenWeather API",
+        "wtype": "current",
+        "lon": "",
+        "lat": "",
+        "city": "",
+        "country": "",
+        "language": "en",
+        "x": 490,
+        "y": 240,
+        "wires": [
+            [
+                "33b479de59332c11"
+            ]
+        ]
+    },
+    {
+        "id": "33b479de59332c11",
+        "type": "chatbot-message",
+        "z": "21971d09456ff5b2",
+        "name": "Generate query response",
+        "message": [
+            {
+                "message": "The temperature in {{payload.location}} is {{payload.tempc}}C!"
+            }
+        ],
+        "language": "none",
+        "x": 750,
+        "y": 240,
+        "wires": [
+            [
+                "5d1894623def2610"
+            ]
+        ]
+    },
+    {
+        "id": "5d1894623def2610",
+        "type": "chatbot-telegram-send",
+        "z": "21971d09456ff5b2",
+        "bot": "d3e571346221efc3",
+        "botProduction": "",
+        "track": false,
+        "passThrough": false,
+        "errorOutput": false,
+        "outputs": 0,
+        "x": 990,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "28f8e9db66397965",
+        "type": "chatbot-message",
+        "z": "21971d09456ff5b2",
+        "name": "Generate track response",
+        "message": [
+            {
+                "message": "Tracking temperature for {{payload.city}}!"
+            }
+        ],
+        "language": "none",
+        "x": 670,
+        "y": 300,
+        "wires": [
+            [
+                "5d1894623def2610"
+            ]
+        ]
+    },
+    {
+        "id": "1a591c087e64a712",
+        "type": "inject",
+        "z": "21971d09456ff5b2",
+        "name": "Log current preferences",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 260,
+        "y": 400,
+        "wires": [
+            [
+                "3f2210528fcabf49"
+            ]
+        ]
+    },
+    {
+        "id": "111dd7d8c5b2e0e0",
+        "type": "debug",
+        "z": "21971d09456ff5b2",
+        "name": "Print to console",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "3f2210528fcabf49",
+        "type": "function",
+        "z": "21971d09456ff5b2",
+        "name": "Read flow context",
+        "func": "msg.payload = flow.get('preferences');\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 490,
+        "y": 400,
+        "wires": [
+            [
+                "111dd7d8c5b2e0e0"
+            ]
+        ]
+    },
+    {
+        "id": "d3e571346221efc3",
+        "type": "chatbot-telegram-node",
+        "botname": "group28eval25noderedbot",
+        "usernames": "",
+        "polling": 1000,
+        "store": "",
+        "log": "",
+        "debug": false,
+        "skipMediaFiles": false,
+        "webHook": "",
+        "connectMode": "polling",
+        "storeMessages": true,
+        "enableMissionControl": false,
+        "inspectMessages": true,
+        "chatbotId": ""
+    },
+    {
+        "id": "0df10562e73cb5cb",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-chatbot": "1.2.4",
+            "node-red-node-openweathermap": "1.0.1"
+        }
+    }
+]
