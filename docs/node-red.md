@@ -76,3 +76,453 @@ MQTT is an extremely lightweight, topic-based, **Publish/Subscribe (Pub/Sub)** m
 **Analogy for Node-RED's Paradigm:**
 
 The flow-based programming model of Node-RED is like a complex assembly line in a factory. Each *node* is a specialized machine (operator) waiting for material (the *message*) to arrive. When the material arrives, the machine processes it (using custom *JavaScript* or a built-in function) and sends the processed material along a specific conveyor belt (the *flow* connection) to the next machine. Since the whole factory runs asynchronously, you can't always predict which machine will finish its work first if multiple inputs arrive simultaneously, but the structure ensures the data moves logically from input to output.
+
+---
+
+## 6. Practical Examples and Code Patterns
+
+### 6.1 Function Node Patterns
+
+#### Basic Message Transformation
+```javascript
+// Access incoming message
+let temperature = msg.payload.temperature;
+let humidity = msg.payload.humidity;
+
+// Create new payload
+msg.payload = {
+    temp_f: temperature * 9/5 + 32,  // Convert to Fahrenheit
+    humidity: humidity,
+    timestamp: new Date().toISOString()
+};
+
+return msg;
+```
+
+#### Filtering Messages
+```javascript
+// Only pass messages that meet criteria
+if (msg.payload.temperature > 25) {
+    return msg;  // Pass message through
+} else {
+    return null; // Discard message
+}
+```
+
+#### Splitting to Multiple Outputs
+```javascript
+// Configure node with 3 outputs
+// Return array with message for each output (null = no output)
+
+let temp = msg.payload.temperature;
+
+if (temp > 30) {
+    return [msg, null, null];  // Send to output 1 (hot)
+} else if (temp > 20) {
+    return [null, msg, null];  // Send to output 2 (warm)
+} else {
+    return [null, null, msg];  // Send to output 3 (cold)
+}
+```
+
+#### Sending Multiple Messages
+```javascript
+// Send multiple messages from single input
+let messages = [];
+
+for (let i = 0; i < 5; i++) {
+    messages.push({
+        payload: {
+            index: i,
+            value: msg.payload.value * i
+        }
+    });
+}
+
+return [messages];  // Array of messages to output 1
+```
+
+#### Using Context to Store State
+```javascript
+// Store value in node context
+let count = context.get('count') || 0;
+count++;
+context.set('count', count);
+
+msg.payload = {
+    count: count,
+    original: msg.payload
+};
+
+return msg;
+```
+
+```javascript
+// Use flow context (shared across flow)
+flow.set('lastTemperature', msg.payload.temperature);
+let previousTemp = flow.get('lastTemperature');
+
+// Use global context (shared across all flows)
+global.set('systemStatus', 'running');
+let status = global.get('systemStatus');
+```
+
+### 6.2 Working with JSON
+
+#### Parse JSON String to Object
+```javascript
+// If msg.payload is a JSON string
+try {
+    msg.payload = JSON.parse(msg.payload);
+    return msg;
+} catch (e) {
+    msg.payload = { error: "Invalid JSON" };
+    return msg;
+}
+```
+
+#### Convert Object to JSON String
+```javascript
+// If msg.payload is an object
+msg.payload = JSON.stringify(msg.payload);
+return msg;
+```
+
+### 6.3 MQTT Patterns
+
+#### Publishing with Topic
+```javascript
+// Set topic dynamically in function node
+msg.topic = "sensors/building1/temperature";
+msg.payload = {
+    value: 23.5,
+    unit: "celsius",
+    timestamp: Date.now()
+};
+return msg;
+// Connect to MQTT Out node
+```
+
+#### Subscribing with Wildcards
+```
+Topic patterns:
+- sensors/+/temperature     (+ matches single level)
+- sensors/#                 (# matches multiple levels)
+- sensors/building1/#       (all sensors in building1)
+```
+
+#### Quality of Service (QoS) Levels
+```
+QoS 0: At most once (fire and forget)
+QoS 1: At least once (acknowledged delivery)
+QoS 2: Exactly once (guaranteed delivery)
+```
+
+### 6.4 HTTP Request/Response Patterns
+
+#### Making HTTP Requests
+```javascript
+// Prepare HTTP request
+msg.url = "https://api.example.com/data";
+msg.method = "POST";
+msg.headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + flow.get('apiToken')
+};
+msg.payload = {
+    sensor: "temp1",
+    value: 25.3
+};
+return msg;
+// Connect to HTTP Request node
+```
+
+#### Handling HTTP Response
+```javascript
+// Process response from HTTP Request node
+if (msg.statusCode === 200) {
+    let data = msg.payload;
+    // Process successful response
+    msg.payload = {
+        success: true,
+        data: data
+    };
+} else {
+    msg.payload = {
+        success: false,
+        error: msg.statusCode
+    };
+}
+return msg;
+```
+
+#### Creating HTTP Endpoints
+```
+HTTP In node → Function (process request) → HTTP Response node
+
+Function node example:
+```
+```javascript
+// Access request data
+let method = msg.req.method;
+let params = msg.req.params;
+let query = msg.req.query;
+let body = msg.payload;
+
+// Create response
+msg.payload = {
+    message: "Request processed",
+    receivedData: body
+};
+
+msg.statusCode = 200;
+return msg;
+```
+
+### 6.5 UDP Communication
+
+#### Sending UDP Messages
+```javascript
+// Prepare UDP message
+msg.payload = JSON.stringify({
+    sensor: "temp1",
+    value: 25.3,
+    timestamp: Date.now()
+});
+
+msg.ip = "192.168.1.100";  // Optional: override destination
+msg.port = 5000;           // Optional: override port
+
+return msg;
+// Connect to UDP Out node
+```
+
+#### Receiving UDP Messages
+```
+UDP In node → Function (process) → Output
+
+Function node example:
+```
+```javascript
+// msg.payload contains the UDP message (typically string)
+try {
+    let data = JSON.parse(msg.payload);
+    msg.payload = {
+        received: data,
+        from: msg.ip + ":" + msg.port
+    };
+} catch (e) {
+    msg.payload = {
+        raw: msg.payload,
+        error: "Not JSON"
+    };
+}
+return msg;
+```
+
+### 6.6 Working with Time and Timers
+
+#### Inject Node with Intervals
+```
+Configure Inject node:
+- Repeat: interval (every X seconds/minutes)
+- Between specific times
+- At specific time of day
+- On specific days
+```
+
+#### Delay and Rate Limiting
+```
+Delay node configurations:
+- Delay each message by X seconds
+- Rate limit: 1 msg per X seconds
+- Delay until (specific time)
+- Random delay between X and Y seconds
+```
+
+#### Timestamp Handling
+```javascript
+// Current timestamp
+msg.payload.timestamp = Date.now();  // Unix timestamp (ms)
+msg.payload.isoTime = new Date().toISOString();  // ISO 8601 format
+
+// Parse timestamp
+let date = new Date(msg.payload.timestamp);
+msg.payload.hour = date.getHours();
+msg.payload.day = date.getDay();
+msg.payload.formatted = date.toLocaleString();
+```
+
+### 6.7 Data Aggregation and Buffering
+
+#### Buffering Messages
+```javascript
+// Store messages in context until threshold
+let buffer = context.get('buffer') || [];
+buffer.push(msg.payload);
+context.set('buffer', buffer);
+
+// Send batch when size reached
+if (buffer.length >= 10) {
+    msg.payload = buffer;
+    context.set('buffer', []);  // Reset buffer
+    return msg;
+} else {
+    return null;  // Don't send yet
+}
+```
+
+#### Computing Averages
+```javascript
+// Maintain running average
+let values = flow.get('values') || [];
+values.push(msg.payload.temperature);
+
+// Keep last 10 values
+if (values.length > 10) {
+    values.shift();
+}
+flow.set('values', values);
+
+// Calculate average
+let avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+msg.payload = {
+    current: msg.payload.temperature,
+    average: avg.toFixed(2),
+    count: values.length
+};
+
+return msg;
+```
+
+### 6.8 Error Handling
+
+#### Try-Catch Pattern
+```javascript
+try {
+    // Potentially problematic operation
+    let result = JSON.parse(msg.payload);
+    msg.payload = result;
+    return msg;
+} catch (error) {
+    // Send to error output (configure node with 2 outputs)
+    msg.payload = {
+        error: error.message,
+        original: msg.payload
+    };
+    return [null, msg];  // Send to output 2
+}
+```
+
+#### Validation Pattern
+```javascript
+// Validate required fields
+function validate(data) {
+    if (!data.temperature) return "Missing temperature";
+    if (!data.sensor_id) return "Missing sensor_id";
+    if (typeof data.temperature !== 'number') return "Temperature must be number";
+    if (data.temperature < -50 || data.temperature > 100) return "Temperature out of range";
+    return null;  // Valid
+}
+
+let error = validate(msg.payload);
+if (error) {
+    msg.payload = { error: error };
+    return [null, msg];  // Invalid - send to output 2
+} else {
+    return [msg, null];  // Valid - send to output 1
+}
+```
+
+---
+
+## 7. Common Node Types Reference
+
+### Input Nodes
+- **Inject**: Manual trigger or scheduled execution
+- **HTTP In**: Create HTTP endpoints
+- **MQTT In**: Subscribe to MQTT topics
+- **TCP In / UDP In**: Network socket input
+- **File In**: Read files from filesystem
+- **Serial In**: Read from serial port
+
+### Output Nodes
+- **Debug**: Display messages in debug panel
+- **HTTP Response**: Send HTTP responses
+- **MQTT Out**: Publish to MQTT topics
+- **TCP Out / UDP Out**: Network socket output
+- **File Out**: Write to filesystem
+- **Email**: Send email messages
+
+### Function Nodes
+- **Function**: Custom JavaScript code
+- **Switch**: Route based on conditions
+- **Change**: Modify message properties
+- **Template**: Generate text/HTML/JSON
+- **JSON**: Parse/stringify JSON
+- **CSV**: Parse/generate CSV
+
+### Processing Nodes
+- **Filter**: Remove duplicate messages
+- **Delay**: Delay or rate-limit messages
+- **Trigger**: Send follow-up messages
+- **Join**: Combine message sequences
+- **Split**: Split messages/arrays
+- **Sort**: Sort message sequences
+- **Batch**: Batch messages together
+
+---
+
+## 8. Best Practices
+
+1. **Message Structure**: Always maintain `msg.payload` for data, use `msg.topic` for categorization
+2. **Error Handling**: Use try-catch and multiple outputs for error paths
+3. **Context Management**: Clear context when no longer needed to avoid memory leaks
+4. **Asynchronous Operations**: Use callbacks or promises for async operations
+5. **Debugging**: Use Debug nodes liberally during development
+6. **Documentation**: Add Comment nodes to explain complex flows
+7. **Modularity**: Break complex flows into subflows for reusability
+8. **Performance**: Avoid blocking operations in Function nodes
+9. **Security**: Never hardcode credentials - use environment variables or context
+10. **Testing**: Test flows with various input scenarios before deployment
+
+---
+
+## 9. Quick Command Reference
+
+### Starting Node-RED
+```bash
+node-red                    # Start Node-RED
+node-red -v                 # Verbose logging
+node-red -s settings.js     # Custom settings file
+```
+
+### Installing Nodes
+```bash
+npm install node-red-contrib-[package-name]
+# Or use Manage Palette in UI
+```
+
+### Common MQTT Test Commands
+```bash
+# Publish to MQTT
+mosquitto_pub -h localhost -t "test/topic" -m "Hello World"
+
+# Subscribe to MQTT
+mosquitto_sub -h localhost -t "test/#" -v
+
+# Subscribe with QoS
+mosquitto_sub -h localhost -t "test/topic" -q 2
+```
+
+### Testing HTTP Endpoints
+```bash
+# GET request
+curl http://localhost:1880/endpoint
+
+# POST request with JSON
+curl -X POST http://localhost:1880/endpoint \
+  -H "Content-Type: application/json" \
+  -d '{"key":"value"}'
+```

@@ -355,3 +355,358 @@ Instead of storing all historical messages for a configurable time (the default 
 
 ---
 *Analogy:* Think of Kafka's log compaction like a notebook where you only care about the final, authoritative version of each entry. If you write "Key 1 = 5," then later write "Key 1 = 10," and finally "Key 1 = 15," the log compaction process removes the first two entries, leaving only "Key 1 = 15." This keeps the record history lean while ensuring you always have the most recent truth associated with that key.
+
+---
+
+### 5. Kafka Administration and Topic Management
+
+Creating and managing Kafka topics programmatically is often necessary for automated workflows and testing.
+
+**Code Example: Creating Topics Programmatically (Java)**
+
+```java
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.NewTopic;
+
+import java.util.Collections;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+
+public class TopicManager {
+    
+    public static void createTopic(String topicName, int partitions, short replicationFactor) {
+        Properties props = new Properties();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        
+        try (AdminClient adminClient = AdminClient.create(props)) {
+            NewTopic newTopic = new NewTopic(topicName, partitions, replicationFactor);
+            
+            adminClient.createTopics(Collections.singleton(newTopic))
+                .all()
+                .get(); // Wait for operation to complete
+                
+            System.out.println("Topic " + topicName + " created successfully");
+        } catch (ExecutionException | InterruptedException e) {
+            System.err.println("Error creating topic: " + e.getMessage());
+        }
+    }
+    
+    public static void deleteTopic(String topicName) {
+        Properties props = new Properties();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        
+        try (AdminClient adminClient = AdminClient.create(props)) {
+            adminClient.deleteTopics(Collections.singleton(topicName))
+                .all()
+                .get();
+                
+            System.out.println("Topic " + topicName + " deleted successfully");
+        } catch (ExecutionException | InterruptedException e) {
+            System.err.println("Error deleting topic: " + e.getMessage());
+        }
+    }
+}
+```
+
+---
+
+### 6. Advanced Producer Configurations
+
+Beyond basic publishing, producers can be tuned for performance, reliability, and delivery guarantees.
+
+#### 6.1 Key Producer Configuration Properties
+
+| Property | Description | Common Values |
+| :--- | :--- | :--- |
+| `acks` | Number of acknowledgments producer requires | `0` (none), `1` (leader), `all` (all replicas) |
+| `retries` | Number of retries on transient errors | `0` to `Integer.MAX_VALUE` |
+| `batch.size` | Batch size in bytes for grouping messages | `16384` (16KB default) |
+| `linger.ms` | Time to wait for batching | `0` (no wait) to milliseconds |
+| `compression.type` | Compression algorithm | `none`, `gzip`, `snappy`, `lz4`, `zstd` |
+| `max.in.flight.requests.per.connection` | Max unacknowledged requests | `5` (default), `1` (strict ordering) |
+
+**Code Example: Producer with Custom Configurations**
+
+```java
+Properties props = new Properties();
+props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+// Reliability: Wait for all replicas to acknowledge
+props.put(ProducerConfig.ACKS_CONFIG, "all");
+
+// Performance: Enable compression
+props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+
+// Batching: Wait up to 10ms to batch messages
+props.put(ProducerConfig.LINGER_MS_CONFIG, "10");
+
+// Idempotence: Prevent duplicates
+props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
+
+KafkaProducer<String, String> producer = new KafkaProducer<>(props);
+```
+
+#### 6.2 Synchronous vs Asynchronous Sending
+
+```java
+// Asynchronous send (fire and forget)
+producer.send(record);
+
+// Asynchronous send with callback
+producer.send(record, (metadata, exception) -> {
+    if (exception != null) {
+        System.err.println("Error sending message: " + exception.getMessage());
+    } else {
+        System.out.printf("Sent to partition %d with offset %d%n", 
+            metadata.partition(), metadata.offset());
+    }
+});
+
+// Synchronous send (wait for acknowledgment)
+try {
+    RecordMetadata metadata = producer.send(record).get();
+    System.out.printf("Sent to partition %d with offset %d%n",
+        metadata.partition(), metadata.offset());
+} catch (Exception e) {
+    System.err.println("Error sending message: " + e.getMessage());
+}
+```
+
+---
+
+### 7. Advanced Consumer Configurations
+
+#### 7.1 Key Consumer Configuration Properties
+
+| Property | Description | Common Values |
+| :--- | :--- | :--- |
+| `auto.offset.reset` | Where to start reading for new consumers | `earliest`, `latest`, `none` |
+| `enable.auto.commit` | Automatically commit offsets | `true` (default), `false` (manual) |
+| `auto.commit.interval.ms` | Frequency of auto-commits | `5000` (5 seconds default) |
+| `max.poll.records` | Max records per poll | `500` (default) |
+| `session.timeout.ms` | Consumer session timeout | `10000` (10 seconds default) |
+| `heartbeat.interval.ms` | Heartbeat frequency | `3000` (3 seconds default) |
+| `fetch.min.bytes` | Minimum data per fetch | `1` byte (default) |
+| `fetch.max.wait.ms` | Max wait time for fetch | `500` ms (default) |
+
+#### 7.2 Manual Offset Management
+
+For precise control over message processing guarantees, disable auto-commit and manage offsets manually:
+
+```java
+Properties props = new Properties();
+props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+props.put(ConsumerConfig.GROUP_ID_CONFIG, "manual-commit-group");
+props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+
+// Disable auto-commit
+props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+
+KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+consumer.subscribe(Collections.singletonList("myTopic"));
+
+while (true) {
+    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+    
+    for (ConsumerRecord<String, String> record : records) {
+        // Process the record
+        processRecord(record);
+    }
+    
+    // Synchronous commit (blocks until complete)
+    consumer.commitSync();
+    
+    // Or asynchronous commit (non-blocking)
+    consumer.commitAsync((offsets, exception) -> {
+        if (exception != null) {
+            System.err.println("Commit failed: " + exception.getMessage());
+        }
+    });
+}
+```
+
+#### 7.3 Seeking to Specific Offsets
+
+```java
+// Seek to beginning of all assigned partitions
+consumer.seekToBeginning(consumer.assignment());
+
+// Seek to end of all assigned partitions
+consumer.seekToEnd(consumer.assignment());
+
+// Seek to specific offset
+TopicPartition partition = new TopicPartition("myTopic", 0);
+consumer.seek(partition, 100L);
+
+// Seek to specific timestamp
+Map<TopicPartition, Long> timestampsToSearch = new HashMap<>();
+timestampsToSearch.put(partition, System.currentTimeMillis() - 3600000); // 1 hour ago
+Map<TopicPartition, OffsetAndTimestamp> result = consumer.offsetsForTimes(timestampsToSearch);
+```
+
+---
+
+### 8. Kafka Streams (Brief Overview)
+
+Kafka Streams is a client library for building stream processing applications that read from and write to Kafka topics.
+
+**Key Concepts:**
+- **KStream**: Unbounded stream of records
+- **KTable**: Changelog stream (latest value per key)
+- **Topology**: Directed graph of stream processors
+
+**Code Example: Simple Stream Processing**
+
+```java
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.KStream;
+
+Properties props = new Properties();
+props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-app");
+props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+StreamsBuilder builder = new StreamsBuilder();
+
+// Read from input topic
+KStream<String, String> source = builder.stream("input-topic");
+
+// Transform: convert to uppercase
+KStream<String, String> transformed = source.mapValues(value -> value.toUpperCase());
+
+// Write to output topic
+transformed.to("output-topic");
+
+KafkaStreams streams = new KafkaStreams(builder.build(), props);
+streams.start();
+```
+
+---
+
+### 9. Quick Reference Guide
+
+#### Essential Imports
+```java
+// Producer
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+
+// Consumer
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
+
+// Serialization
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+
+// Admin
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.NewTopic;
+
+// Common
+import java.time.Duration;
+import java.util.Properties;
+import java.util.Collections;
+```
+
+#### Common Patterns Cheat Sheet
+
+**Producer Pattern:**
+```java
+// 1. Configure
+Properties props = new Properties();
+props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+// 2. Create producer
+KafkaProducer<String, String> producer = new KafkaProducer<>(props);
+
+// 3. Send
+ProducerRecord<String, String> record = new ProducerRecord<>("topic", "key", "value");
+producer.send(record);
+
+// 4. Close
+producer.close();
+```
+
+**Consumer Pattern:**
+```java
+// 1. Configure
+Properties props = new Properties();
+props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+props.put(ConsumerConfig.GROUP_ID_CONFIG, "my-group");
+props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+
+// 2. Create and subscribe
+KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
+consumer.subscribe(Collections.singletonList("topic"));
+
+// 3. Poll loop
+while (true) {
+    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+    for (ConsumerRecord<String, String> record : records) {
+        System.out.printf("offset=%d, key=%s, value=%s%n", 
+            record.offset(), record.key(), record.value());
+    }
+}
+
+// 4. Close
+consumer.close();
+```
+
+**Transactional Producer-Consumer:**
+```java
+// Producer with transactions
+props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, "my-transactional-id");
+props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
+producer.initTransactions();
+
+// Consumer with read_committed
+props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
+props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+
+// Transaction loop
+while (true) {
+    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+    if (!records.isEmpty()) {
+        producer.beginTransaction();
+        try {
+            // Process and produce
+            for (ConsumerRecord<String, String> record : records) {
+                producer.send(new ProducerRecord<>("output", record.value()));
+            }
+            // Commit consumer offsets in transaction
+            producer.sendOffsetsToTransaction(getOffsets(records), consumer.groupMetadata());
+            producer.commitTransaction();
+        } catch (Exception e) {
+            producer.abortTransaction();
+        }
+    }
+}
+```
+
+#### Best Practices
+
+1. **Idempotence**: Always enable for producers in production
+2. **Replication**: Use replication factor ≥ 3 for important topics
+3. **Partitioning**: Choose partition keys carefully for even distribution
+4. **Consumer Groups**: Scale by adding consumers (up to partition count)
+5. **Offset Management**: Use manual commits for exactly-once semantics
+6. **Error Handling**: Always handle exceptions in callbacks
+7. **Resource Cleanup**: Always close producers/consumers in finally blocks
+8. **Monitoring**: Monitor lag, throughput, and error rates
+9. **Batching**: Tune batch.size and linger.ms for throughput
+10. **Testing**: Use embedded Kafka for integration tests

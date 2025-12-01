@@ -126,6 +126,40 @@ private void onOtherMessage(OtherMessage msg) {
 }
 ```
 
+**Code Example: Counter with Multiple Message Types (Java)**
+
+```java
+public class CounterActor extends AbstractActor {
+    private int counter;
+
+    public CounterActor() {
+        this.counter = 0;
+    }
+
+    @Override
+    public Receive createReceive() {
+        return receiveBuilder()
+            .match(IncreaseMessage.class, this::onIncreaseMessage)
+            .match(DecreaseMessage.class, this::onDecreaseMessage)
+            .build();
+    }
+
+    void onIncreaseMessage(IncreaseMessage msg) {
+        ++counter;
+        System.out.println("Counter increased to " + counter);
+    }
+
+    void onDecreaseMessage(DecreaseMessage msg) {
+        --counter;
+        System.out.println("Counter decreased to " + counter);
+    }
+
+    static Props props() {
+        return Props.create(CounterActor.class);
+    }
+}
+```
+
 #### D. Replying to Messages
 
 When processing a message, an actor can obtain a reference to the sender using the `sender()` method and a reference to itself using `self()`. To reply, the actor invokes `tell()` on the sender reference:
@@ -152,6 +186,104 @@ To use stashing, the actor must inherit from `AbstractActorWithStash`.
 *   The `unstashAll()` method extracts all stashed messages in the order they were added.
 
 Stashing is useful, for example, if a message attempts to decrement a counter when its state is zero; the message can be stashed and processed later after an increment operation occurs.
+
+**Code Example: Stashing Counter (Java)**
+
+This example shows a strictly positive counter that stashes decrement messages when counter is zero:
+
+```java
+package it.polimi.nsds.akka.tutorial.ex002.stashingCounter;
+
+import akka.actor.AbstractActorWithStash;
+import akka.actor.Props;
+
+public class StrictlyPositiveCounterActor extends AbstractActorWithStash {
+    private int counter = 0;
+
+    @Override
+    public Receive createReceive() {
+        return receiveBuilder()
+            .match(IncreaseMessage.class, this::onIncreaseMessage)
+            .match(DecreaseMessage.class, this::onDecreaseMessage)
+            .build();
+    }
+
+    void onDecreaseMessage(DecreaseMessage msg) {
+        if (counter <= 0) {
+            // Cannot decrease when counter is 0 - stash for later
+            stash();
+        } else {
+            --counter;
+            System.out.println("Counter decreased to " + counter);
+        }
+    }
+
+    void onIncreaseMessage(IncreaseMessage msg) {
+        ++counter;
+        System.out.println("Counter increased to " + counter);
+        // Unstash all pending decrements after increasing
+        unstashAll();
+    }
+
+    public static Props props() {
+        return Props.create(StrictlyPositiveCounterActor.class);
+    }
+}
+```
+
+**Code Example: Chat Server with State Changes and Stashing (Java)**
+
+This example demonstrates a chat server that can sleep and wake up, stashing messages while sleeping:
+
+```java
+import akka.actor.AbstractActorWithStash;
+import akka.japi.pf.ReceiveBuilder;
+
+public class ChatServerActor extends AbstractActorWithStash {
+
+    @Override
+    public Receive createReceive() {
+        return active();
+    }
+
+    // Active state: processes all messages normally
+    public Receive active() {
+        return new ReceiveBuilder()
+            .match(TextMessage.class, this::onTextMessage)
+            .match(SleepMessage.class, this::onSleep)
+            .match(WakeupMessage.class, this::onWakeup)
+            .build();
+    }
+
+    // Sleeping state: only responds to wakeup, stashes everything else
+    public Receive sleeping() {
+        return new ReceiveBuilder()
+            .match(WakeupMessage.class, this::onWakeup)
+            .matchAny(message -> {
+                // Stash all other messages (including TextMessage)
+                stash();
+            })
+            .build();
+    }
+
+    private void onSleep(SleepMessage message) {
+        System.out.println("Server going to sleep...");
+        getContext().become(sleeping());
+    }
+
+    private void onWakeup(WakeupMessage message) {
+        System.out.println("Server is waking up...");
+        getContext().become(active());
+        // Process all stashed messages
+        unstashAll();
+    }
+
+    private void onTextMessage(TextMessage message) {
+        System.out.println("Received message: " + message.text);
+        sender().tell(message.text, getSelf());
+    }
+}
+```
 
 ### 2.3 Distribution
 
@@ -271,3 +403,280 @@ Akka clustering supports higher-level tools for sophisticated distributed applic
 
 ***
 To solidify the understanding of Akka and the Actor Model, consider it like managing a massive, hyper-efficient post office: each **Actor** is a specialized clerk with their own private desk and filing cabinet (state). They only communicate by sending sealed **Messages** (immutable data) via the internal mail system (mailbox). The **Actor System** is the building itself, and the **Supervisor** is the department manager who, if a clerk falls ill (fault), can hire a new clerk immediately (restart) or simply tell them to take a break and resume work later (resume), ensuring the mail flow (communication) is never interrupted or lost, regardless of whether the clerk is local or across town (distribution).
+
+***
+
+## 5. Quick Reference Guide
+
+### 5.1 Essential Imports
+
+```java
+// Core Akka
+import akka.actor.AbstractActor;
+import akka.actor.AbstractActorWithStash;
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+
+// Patterns and utilities
+import akka.pattern.Patterns;
+import akka.japi.pf.ReceiveBuilder;
+import scala.concurrent.Future;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
+
+// Supervision
+import akka.actor.SupervisorStrategy;
+import akka.actor.OneForOneStrategy;
+import akka.actor.AllForOneStrategy;
+import akka.japi.pf.DeciderBuilder;
+
+// Common types
+import java.util.Optional;
+import java.time.Duration; // Java time
+```
+
+### 5.2 Actor Lifecycle Methods
+
+Override these methods to hook into actor lifecycle events:
+
+```java
+@Override
+public void preStart() {
+    // Called when actor starts
+    System.out.println("Actor starting...");
+}
+
+@Override
+public void postStop() {
+    // Called after actor stops
+    System.out.println("Actor stopped");
+}
+
+@Override
+public void preRestart(Throwable reason, Optional<Object> message) {
+    // Called before restart
+    System.out.println("Preparing to restart...");
+    super.preRestart(reason, message);
+}
+
+@Override
+public void postRestart(Throwable reason) {
+    // Called after restart
+    System.out.println("Restarted!");
+    super.postRestart(reason);
+}
+```
+
+### 5.3 Common Patterns Cheat Sheet
+
+#### Creating Actor System and Actors
+```java
+// Create actor system
+ActorSystem system = ActorSystem.create("SystemName");
+
+// Define actor props
+Props props = Props.create(MyActor.class);
+// Or with parameters
+Props propsWithArgs = Props.create(MyActor.class, () -> new MyActor(param1, param2));
+
+// Create actor
+ActorRef actor = system.actorOf(props, "actorName");
+
+// Create child actor (inside an actor)
+ActorRef child = getContext().actorOf(ChildActor.props(), "childName");
+```
+
+#### Sending Messages
+```java
+// Fire and forget (tell)
+actor.tell(message, self());
+actor.tell(message, ActorRef.noSender());
+
+// Request-response (ask)
+Future<Object> future = Patterns.ask(actor, message, Duration.ofSeconds(5));
+Object response = Await.result(future, Duration.ofSeconds(5));
+```
+
+#### Receiving Messages
+```java
+@Override
+public Receive createReceive() {
+    return receiveBuilder()
+        .match(MessageType1.class, this::handleMessage1)
+        .match(MessageType2.class, msg -> {
+            // Inline handler
+            System.out.println("Received: " + msg);
+        })
+        .matchAny(msg -> {
+            // Catch-all
+            System.out.println("Unknown message: " + msg);
+        })
+        .build();
+}
+```
+
+#### Behavior Changes
+```java
+// Define different behaviors
+public Receive behaviorA() {
+    return receiveBuilder()
+        .match(Msg.class, this::handleInStateA)
+        .build();
+}
+
+public Receive behaviorB() {
+    return receiveBuilder()
+        .match(Msg.class, this::handleInStateB)
+        .build();
+}
+
+// Change behavior
+getContext().become(behaviorB());
+
+// Revert to initial behavior
+getContext().unbecome();
+```
+
+#### Stashing
+```java
+// Actor must extend AbstractActorWithStash
+public class MyActor extends AbstractActorWithStash {
+    
+    @Override
+    public Receive createReceive() {
+        return receiveBuilder()
+            .match(ProcessMsg.class, msg -> {
+                if (canProcess()) {
+                    process(msg);
+                } else {
+                    stash(); // Save for later
+                }
+            })
+            .match(EnableMsg.class, msg -> {
+                enable();
+                unstashAll(); // Process all stashed messages
+            })
+            .build();
+    }
+}
+```
+
+#### Remote Actor Selection
+```java
+// Get reference to remote actor
+String path = "akka.tcp://SystemName@host:port/user/actorName";
+ActorSelection remote = getContext().actorSelection(path);
+
+// Send message to remote actor
+remote.tell(message, self());
+```
+
+#### Supervision Strategies
+```java
+// One-for-one strategy
+private static SupervisorStrategy strategy = new OneForOneStrategy(
+    10, // Max 10 retries
+    Duration.ofMinutes(1), // Within 1 minute
+    DeciderBuilder
+        .match(ArithmeticException.class, e -> SupervisorStrategy.resume())
+        .match(NullPointerException.class, e -> SupervisorStrategy.restart())
+        .match(IllegalArgumentException.class, e -> SupervisorStrategy.stop())
+        .matchAny(e -> SupervisorStrategy.escalate())
+        .build()
+);
+
+@Override
+public SupervisorStrategy supervisorStrategy() {
+    return strategy;
+}
+
+// All-for-one strategy (applies to all children)
+private static SupervisorStrategy allStrategy = new AllForOneStrategy(
+    10,
+    Duration.ofMinutes(1),
+    DeciderBuilder
+        .match(Exception.class, e -> SupervisorStrategy.restart())
+        .build()
+);
+```
+
+### 5.4 Configuration Examples
+
+#### Application Configuration (application.conf)
+```hocon
+akka {
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+  
+  remote {
+    enabled-transports = ["akka.remote.netty.tcp"]
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 2552
+    }
+  }
+  
+  loglevel = "INFO"
+}
+```
+
+#### Loading Configuration in Code
+```java
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
+Config config = ConfigFactory.load();
+ActorSystem system = ActorSystem.create("SystemName", config);
+```
+
+### 5.5 Best Practices
+
+1. **Message Immutability**: Always use immutable messages (final fields, no setters)
+2. **Props Factory Method**: Define static `props()` method in each actor class
+3. **Avoid Blocking**: Never block in actors - use async patterns or dedicated dispatchers
+4. **Supervision**: Design supervision hierarchies - don't let failures propagate unhandled
+5. **Testing**: Use `TestKit` for actor testing with controlled message passing
+6. **State Encapsulation**: Keep all state private, never share mutable state
+7. **Dispatcher Configuration**: Use separate dispatchers for blocking vs non-blocking operations
+8. **Remote Deployment**: Keep physical configuration (host/port) in config files, not code
+9. **Graceful Shutdown**: Always close ActorSystem properly: `system.terminate()`
+
+### 5.6 Common Message Patterns
+
+```java
+// Request-Response Pattern
+public class Request {
+    public final String query;
+    public Request(String query) { this.query = query; }
+}
+
+public class Response {
+    public final String result;
+    public Response(String result) { this.result = result; }
+}
+
+// In actor handling request
+void onRequest(Request req) {
+    String result = processQuery(req.query);
+    sender().tell(new Response(result), self());
+}
+
+// Command Pattern
+public class DoSomething {
+    public final int value;
+    public DoSomething(int value) { this.value = value; }
+}
+
+// Event Pattern
+public class SomethingHappened {
+    public final long timestamp;
+    public final String details;
+    public SomethingHappened(long timestamp, String details) {
+        this.timestamp = timestamp;
+        this.details = details;
+    }
+}
+```
