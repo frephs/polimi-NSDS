@@ -1,6 +1,6 @@
 package it.polimi.nsds.spark.tutorial.streaming.wordcount;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;

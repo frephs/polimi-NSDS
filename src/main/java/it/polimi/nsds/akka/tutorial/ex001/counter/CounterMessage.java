@@ -2,10 +2,10 @@ package it.polimi.nsds.akka.tutorial.ex001.counter;
 
 public class CounterMessage {
 
-    int value;
+    public int value;
     TypeEnum type;
 
-    enum TypeEnum {
+    public enum TypeEnum {
         ADD,
         SUBTRACT,
     }

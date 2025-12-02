@@ -1,5 +1,6 @@
 package it.polimi.nsds.spark.labs.enrichment;
 
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -32,7 +33,7 @@ public class EventEnrichment {
         final String master = args.length > 0 ? args[0] : "local[4]";
         final String socketHost = args.length > 1 ? args[1] : "localhost";
         final int socketPort = args.length > 2 ? Integer.parseInt(args[2]) : 9999;
-        final String filePath = args.length > 3 ? args[3] : "./";
+        final String filePath = args.length > 3 ? args[3] : Consts.FILE_PATH_DEFAULT;
 
         final SparkSession spark = SparkSession
                 .builder()
@@ -60,7 +61,7 @@ public class EventEnrichment {
                 .option("header", "false")
                 .option("delimiter", ",")
                 .schema(productClassificationSchema)
-                .csv(filePath + "files/enrichment/product_classification.csv");
+                .csv(filePath + "labs/enrichment/product_classification.csv");
 
         // Create dataframe from streaming source
         Dataset<Row> inStreamDF = inStream.toDF("product");

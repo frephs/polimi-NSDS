@@ -1,5 +1,6 @@
 package it.polimi.nsds.spark.labs.friends;
 
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -17,7 +18,7 @@ public class FriendsComputation {
 
     public static void main(String[] args) {
         final String master = args.length > 0 ? args[0] : "local[4]";
-        final String filePath = args.length > 1 ? args[1] : "./";
+        final String filePath = args.length > 1 ? args[1] : Consts.FILE_PATH_DEFAULT;
         final String appName = args.length > 2 ? args[2] : "friends";
 
         final SparkSession spark = SparkSession
@@ -37,7 +38,7 @@ public class FriendsComputation {
                 .option("header", "false")
                 .option("delimiter", ",")
                 .schema(mySchema)
-                .csv(filePath + "files/friends/friends.csv");
+                .csv(filePath + "labs/friends/friends.csv");
 
 
         friends.show();

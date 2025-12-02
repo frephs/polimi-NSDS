@@ -1,6 +1,6 @@
 package it.polimi.nsds.spark.tutorial.streaming.event_time;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;

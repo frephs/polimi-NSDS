@@ -1,5 +1,6 @@
 package it.polimi.nsds.spark.labs.cities;
 
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeoutException;
 public class Cities {
     public static void main(String[] args) throws TimeoutException, IOException {
         final String master = args.length > 0 ? args[0] : "local[4]";
-        final String filePath = args.length > 1 ? args[1] : "./";
+        final String filePath = args.length > 1 ? args[1] : Consts.FILE_PATH_DEFAULT;
 
         final SparkSession spark = SparkSession
                 .builder()

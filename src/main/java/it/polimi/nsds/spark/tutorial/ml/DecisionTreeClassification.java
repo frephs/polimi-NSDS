@@ -3,7 +3,7 @@
  */
 package it.polimi.nsds.spark.tutorial.ml;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.ml.PipelineStage;
@@ -32,7 +32,7 @@ public class DecisionTreeClassification {
     Dataset<Row> data = spark
             .read()
             .format("libsvm")
-            .load(filePath + "files/ml/sample_libsvm_data.txt");
+            .load(filePath + "tutorial/ml/sample_libsvm_data.txt");
 
     // Index labels, adding metadata to the label column.
     // Fit on whole dataset to include all labels in index.

@@ -1,6 +1,6 @@
 package it.polimi.nsds.spark.tutorial.batch.bank;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -54,14 +54,14 @@ public class Bank {
                 .option("header", "false")
                 .option("delimiter", ",")
                 .schema(mySchema)
-                .csv(filePath + "files/bank/deposits.csv");
+                .csv(filePath + "tutorial/bank/deposits.csv");
 
         final Dataset<Row> withdrawals = spark
                 .read()
                 .option("header", "false")
                 .option("delimiter", ",")
                 .schema(mySchema)
-                .csv(filePath + "files/bank/withdrawals.csv");
+                .csv(filePath + "tutorial/bank/withdrawals.csv");
 
         // Used in two different queries
         if (useCache) {

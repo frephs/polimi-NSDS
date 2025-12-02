@@ -1,6 +1,6 @@
 package it.polimi.nsds.spark.tutorial.streaming.enrichment;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -59,7 +59,7 @@ public class EventEnrichment {
                 .option("header", "false")
                 .option("delimiter", ",")
                 .schema(productClassificationSchema)
-                .csv(filePath + "files/enrichment/product_classification.csv");
+                .csv(filePath + "tutorial/enrichment/product_classification.csv");
 
         final StreamingQuery query = inStreamDF
                 .join(productsClassification, inStreamDF.col("product").equalTo(productsClassification.col("product")))

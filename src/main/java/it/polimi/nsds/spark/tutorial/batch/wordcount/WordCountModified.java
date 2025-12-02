@@ -1,6 +1,6 @@
 package it.polimi.nsds.spark.tutorial.batch.wordcount;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -19,7 +19,7 @@ public class WordCountModified {
         final JavaSparkContext sc = new JavaSparkContext(conf);
         sc.setLogLevel("ERROR");
 
-        final JavaRDD<String> lines = sc.textFile(filePath + "files/wordcount/in.txt");
+        final JavaRDD<String> lines = sc.textFile(filePath + "tutorial/wordcount/in.txt");
 
         // Q1. For each character, compute the number of words starting with that character
         final JavaRDD<String> words = lines.flatMap(line -> Arrays.asList(line.split(" ")).iterator());

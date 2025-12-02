@@ -2,9 +2,9 @@ package it.polimi.nsds.akka.tutorial.ex001_2.counter;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
-import it.polimi.nsds.akka.tutorial.ex001.counter.CounterMessage;
-import it.polimi.nsds.akka.tutorial.ex001.counter.DecreaseMessage;
-import it.polimi.nsds.akka.tutorial.ex001.counter.IncreaseMessage;
+import it.polimi.nsds.akka.tutorial.ex001_2.counter.CounterMessage;
+import it.polimi.nsds.akka.tutorial.ex001_2.counter.DecreaseMessage;
+import it.polimi.nsds.akka.tutorial.ex001_2.counter.IncreaseMessage;
 
 public class CounterActor extends AbstractActor {
 

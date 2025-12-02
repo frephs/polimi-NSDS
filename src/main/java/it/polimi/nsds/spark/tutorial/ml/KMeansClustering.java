@@ -4,7 +4,7 @@
 
 package it.polimi.nsds.spark.tutorial.ml;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.ml.clustering.KMeans;
 import org.apache.spark.ml.clustering.KMeansModel;
 import org.apache.spark.ml.evaluation.ClusteringEvaluator;
@@ -30,7 +30,7 @@ public class KMeansClustering {
     Dataset<Row> data = spark
             .read()
             .format("libsvm")
-            .load(filePath + "files/ml/sample_libsvm_data.txt");
+            .load(filePath + "tutorial/ml/sample_libsvm_data.txt");
 
     // Trains a k-means model.
     KMeans kmeans = new KMeans().setK(2).setSeed(1L);

@@ -1,5 +1,6 @@
 package it.polimi.nsds.spark.labs.bank;
 
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -16,7 +17,7 @@ import static org.apache.spark.sql.functions.*;
 /**
  * Bank example
  *
- * Input: csv files with list of deposits and withdrawals, having the following
+ * Input: csv labs with list of deposits and withdrawals, having the following
  * schema ("person: String, account: String, amount: Int)
  *
  * Queries
@@ -33,7 +34,7 @@ public class Bank {
 
     public static void main(String[] args) throws IOException {
         final String master = args.length > 0 ? args[0] : "local[4]";
-        final String filePath = args.length > 1 ? args[1] : "./";
+        final String filePath = args.length > 1 ? args[1] : Consts.FILE_PATH_DEFAULT;
         final String appName = useCache ? "BankWithCache" : "BankNoCache";
 
 
@@ -59,14 +60,14 @@ public class Bank {
                 .option("header", "false")
                 .option("delimiter", ",")
                 .schema(mySchema)
-                .csv(filePath + "files/bank/deposits.csv");
+                .csv(filePath + "labs/bank/deposits.csv");
 
         final Dataset<Row> withdrawals = spark
                 .read()
                 .option("header", "false")
                 .option("delimiter", ",")
                 .schema(mySchema)
-                .csv(filePath + "files/bank/withdrawals.csv");
+                .csv(filePath + "labes/bank/withdrawals.csv");
 
         // Used in two different queries
         if (useCache) {

@@ -2,8 +2,8 @@ package it.polimi.nsds.akka.tutorial.ex001_2.counter;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import it.polimi.nsds.akka.tutorial.ex001.counter.DecreaseMessage;
-import it.polimi.nsds.akka.tutorial.ex001.counter.IncreaseMessage;
+import it.polimi.nsds.akka.tutorial.ex001_2.counter.DecreaseMessage;
+import it.polimi.nsds.akka.tutorial.ex001_2.counter.IncreaseMessage;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

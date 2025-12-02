@@ -1,6 +1,6 @@
 package it.polimi.nsds.spark.tutorial.batch.wordcount;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -19,7 +19,7 @@ public class WordCount {
         final JavaSparkContext sc = new JavaSparkContext(conf);
         sc.setLogLevel("ERROR");
 
-        final JavaRDD<String> lines = sc.textFile(filePath + "files/wordcount/in.txt");
+        final JavaRDD<String> lines = sc.textFile(filePath + "tutorial/wordcount/in.txt");
         final JavaRDD<String> words = lines.flatMap(line -> Arrays.asList(line.split(" ")).iterator());
         final JavaPairRDD<String, Integer> pairs = words.mapToPair(s -> new Tuple2<>(s, 1));
         final JavaPairRDD<String, Integer> counts = pairs.reduceByKey((a, b) -> a + b);

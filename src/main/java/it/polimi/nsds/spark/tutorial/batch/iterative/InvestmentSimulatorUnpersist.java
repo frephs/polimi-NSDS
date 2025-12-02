@@ -1,6 +1,6 @@
 package it.polimi.nsds.spark.tutorial.batch.iterative;
 
-import it.polimi.spark.tutorial.common.Consts;
+import it.polimi.nsds.spark.tutorial.common.Consts;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -25,7 +25,7 @@ public class InvestmentSimulatorUnpersist {
         final JavaSparkContext sc = new JavaSparkContext(conf);
         sc.setLogLevel("ERROR");
 
-        final JavaRDD<String> textFile = sc.textFile(filePath + "files/iterative/investment.txt");
+        final JavaRDD<String> textFile = sc.textFile(filePath + "tutorial/iterative/investment.txt");
 
         // Transforms each line into a tuple (amount_owned, investment_rate)
         JavaRDD<Tuple2<Double, Double>> investments = textFile.map(w -> {
