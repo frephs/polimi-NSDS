@@ -6,6 +6,7 @@ This repository contains exercises and resources related to the Networked Softwa
 - [Node-RED](docs/node-red.md)
 - [Apache Spark](docs/spark.md)
 - [MPI](docs/mpi.md)
+- [Contiki-ng](docs/contiki-ng.md)
 
 ## Repository Structure
 - `docs/`: Documentation and theoretical materials for the course topics.
