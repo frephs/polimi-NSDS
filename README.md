@@ -9,7 +9,7 @@ This repository contains exercises and resources related to the Networked Softwa
 - [Contiki-ng](docs/contiki-ng.md)
 
 ## Repository Structure
-- `docs/`: Documentation and theoretical materials for the course topics.
+- `docs/`: Documentation and theoretical materials for the course topics, they include my notes, integrated with code examples with the help of generative AI.
 - `src/`: Source code for exercises and examples.
 
 ## Group Members
